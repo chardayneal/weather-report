@@ -9,7 +9,9 @@ const elements = {
   tempValue: document.getElementById('tempValue'),
   incrTempControl: document.getElementById('increaseTempControl'),
   decrTempControl: document.getElementById('decreaseTempControl'),
-  landscape: document.getElementById('landscape')
+  landscape: document.getElementById('landscape'),
+  cityNameInput: document.getElementById('cityNameInput'),
+  headerCityName: document.getElementById('headerCityName')
 };
 
 const landscapes = {
@@ -51,6 +53,9 @@ const registerHandlers = () => {
   updateLandscape(initialTemp);
   incrTempControl.addEventListener('click', () => updateTemp(1));
   decrTempControl.addEventListener('click', () => updateTemp(-1));
+  cityNameInput.addEventListener('input', () => {
+    headerCityName.textContent = cityNameInput.value
+  });
 };
 
 document.addEventListener('DOMContentLoaded', registerHandlers);
