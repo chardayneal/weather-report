@@ -47,6 +47,10 @@ const updateLandscape = (temp) => {
   elements.landscape.textContent = landscape;
 };
 
+// const getLocation
+
+// const getWeather
+
 const registerHandlers = () => {
   const { incrTempControl, decrTempControl, tempValue } = elements;
   let initialTemp = parseInt(tempValue.textContent) || NaN; // add logic to handle this
