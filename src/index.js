@@ -11,7 +11,8 @@ const elements = {
   decrTempControl: document.getElementById('decreaseTempControl'),
   landscape: document.getElementById('landscape'),
   cityNameInput: document.getElementById('cityNameInput'),
-  headerCityName: document.getElementById('headerCityName')
+  headerCityName: document.getElementById('headerCityName'),
+  currentTempButton: document.getElementById('currentTempButton')
 };
 
 const landscapes = {
@@ -56,6 +57,14 @@ const registerHandlers = () => {
   cityNameInput.addEventListener('input', () => {
     headerCityName.textContent = cityNameInput.value
   });
+  currentTempButton.addEventListener('click', () => {
+    const cityName = elements.cityNameInput.value;
+    if (!cityName) {
+      alert('Please enter a city name.');
+    }
+  })
+
+  getWeather(cityName);
 };
 
 document.addEventListener('DOMContentLoaded', registerHandlers);
