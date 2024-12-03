@@ -1,41 +1,56 @@
-const increaseTempControl = document.getElementById('increaseTempControl');
-const tempValue = document.getElementById('tempValue');
+const temperatures = {
+  cold: 50,
+  cool: 60,
+  warm: 70,
+  hot: 80
+}
 
-const increaseTempHandler = () => {
-  let newTemp = (parseInt(tempValue.textContent) + 1).toString();
-  tempValue.textContent = newTemp;
+const elements = {
+  tempValue: document.getElementById('tempValue'),
+  incrTempControl: document.getElementById('increaseTempControl'),
+  decrTempControl: document.getElementById('decreaseTempControl'),
+  landscape: document.getElementById('landscape')
+};
+
+const landscapes = {
+  hot: "🌵__🐍_🦂_🌵🌵__🐍_🏜_🦂",
+  warm: "🌸🌿🌼__🌷🌻🌿_☘️🌱_🌻🌷",
+  cool: "🌾🌾_🍃_🪨__🛤_🌾🌾🌾_🍃",
+  cold: "🌲🌲⛄️🌲⛄️🍂🌲🍁🌲🌲⛄️🍂🌲"
+};
+
+const updateTemp = (incrementValue) => {
+  let temp = parseInt(tempValue.textContent) || NaN; // add logic to handle this
+  const newTemp = temp + incrementValue;
+  elements.tempValue.textContent = newTemp;
   updateTempColor(newTemp);
+  updateLandscape(newTemp);
 };
 
-const decreaseTempControl = document.getElementById('decreaseTempControl');
-const decreaseTempHandler = () => {
-  let newTemp = (parseInt(tempValue.textContent) - 1).toString();
-  tempValue.textContent = newTemp;
-  updateTempColor(newTemp);
+const updateTempColor = (temp) => {
+  const color = temp < temperatures.cold ? 'teal'
+                : temp < temperatures.cool ? 'green'
+                : temp < temperatures.warm ? 'yellow'
+                : temp < temperatures.hot ? 'orange'
+                : 'red';
+  elements.tempValue.style.color = color;
 };
 
-const updateTempColor = (currTemp) => {
-  let textColor = '';
-
-  if (currTemp <= 49) {
-    textColor = 'blue';
-  } else if (currTemp >= 50 && currTemp < 60) {
-    textColor = 'green';
-  } else if (currTemp >= 60 && currTemp < 70) {
-    textColor = 'yellow';    
-  } else if (currTemp >= 70 && currTemp < 80) {
-    textColor = 'orange';    
-  } else {
-    textColor = 'red';
-  }
-  tempValue.style.color = textColor;
+const updateLandscape = (temp) => {
+  const landscape = temp < temperatures.cool ? landscapes.cold
+                  : temp < temperatures.warm ? landscapes.cool
+                  : temp < temperatures.hot ? landscapes.warm
+                  : landscapes.hot;
+  elements.landscape.textContent = landscape;
 };
 
-// add event listener that registers our handlers to the DOM elements
 const registerHandlers = () => {
-  updateTempColor(tempValue.textContent);
-  increaseTempControl.addEventListener('click', increaseTempHandler);
-  decreaseTempControl.addEventListener('click', decreaseTempHandler);
+  const { incrTempControl, decrTempControl, tempValue } = elements;
+  let initialTemp = parseInt(tempValue.textContent) || NaN; // add logic to handle this
+  updateTempColor(initialTemp);
+  updateLandscape(initialTemp);
+  incrTempControl.addEventListener('click', () => updateTemp(1));
+  decrTempControl.addEventListener('click', () => updateTemp(-1));
 };
 
 document.addEventListener('DOMContentLoaded', registerHandlers);
