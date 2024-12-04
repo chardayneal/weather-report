@@ -1,25 +1,48 @@
-const DEFAULT_CITY = 'Seattle';
-const DEFAULT_SKY = 'sunny';
-
-const TEMPS_IN_F = {
-  cold: 50,
-  cool: 60,
-  warm: 70,
-  hot: 80,
-}
-
-const SKIES = {
-  sunny: "☁️ ☁️ ☁️ ☀️ ☁️ ☁️",
-  cloudy: "☁️☁️ ☁️ ☁️☁️ ☁️ 🌤 ☁️ ☁️☁️",
-  rainy: "🌧🌈⛈🌧🌧💧⛈🌧🌦🌧💧🌧🌧",
-  snowy: "🌨❄️🌨🌨❄️❄️🌨❄️🌨❄️❄️🌨🌨"
+const DEFAULTS = {
+  CITY: 'Seattle',
+  SKY: 'sunny',
+  LANDSCAPE: 'hot',
 };
 
-const LANDSCAPES = {
-  hot: "🌵__🐍_🦂_🌵🌵__🐍_🏜_🦂",
-  warm: "🌸🌿🌼__🌷🌻🌿_☘️🌱_🌻🌷",
-  cool: "🌾🌾_🍃_🪨__🛤_🌾🌾🌾_🍃",
-  cold: "🌲🌲⛄️🌲⛄️🍂🌲🍁🌲🌲⛄️🍂🌲"
+const WEATHER_CONFIG = {
+  TEMP_SCHEME: [
+    {
+      category: 'cold',
+      threshold: 50,
+      color: 'teal',
+      landscape: '🌲🌲⛄️🌲⛄️🍂🌲🍁🌲🌲⛄️🍂🌲',
+    },
+    {
+      category: 'cool',
+      threshold: 60,
+      color: 'green',
+      landscape: '🌾🌾_🍃_🪨__🛤_🌾🌾🌾_🍃',
+    },
+    {
+      category: 'warm',
+      threshold: 70,
+      color: 'yellow',
+      landscape: '🌸🌿🌼__🌷🌻🌿_☘️🌱_🌻🌷',
+    },
+    {
+      category: 'hot',
+      threshold: 80,
+      color: 'orange',
+      landscape: '🌵__🐍_🦂_🌵🌵__🐍_🏜_🦂',
+    },
+    {
+      category: 'veryHot',
+      threshold: Infinity,
+      color: 'red',
+      landscape: null,
+    },
+  ],
+  SKY_VIEWS: {
+    sunny: "☁️ ☁️ ☁️ ☀️ ☁️ ☁️",
+    cloudy: "☁️☁️ ☁️ ☁️☁️ ☁️ 🌤 ☁️ ☁️☁️",
+    rainy: "🌧🌈⛈🌧🌧💧⛈🌧🌦🌧💧🌧🌧",
+    snowy: "🌨❄️🌨🌨❄️❄️🌨❄️🌨❄️❄️🌨🌨"
+  },
 };
 
 const getElement = (id) => document.getElementById(id);
@@ -37,59 +60,41 @@ const elements = {
   cityNameReset: getElement('cityNameReset'),
 };
 
-const updateSky = (selectedSky = 'sunny') => {
-  const skyText = SKIES[selectedSky];
+const resetUI = () => {
+  elements.cityNameInput.value = DEFAULTS.CITY;
+  elements.headerCityName.textContent = DEFAULTS.CITY;
+  elements.skySelect.value = DEFAULTS.SKY;
+  updateSky();
+  updateWeatherForCity();
+};
+
+const updateSky = (selectedSky = DEFAULTS.SKY) => {
+  const skyText = WEATHER_CONFIG.SKY_VIEWS[selectedSky];
   elements.sky.textContent = skyText;
 };
 
-const updateTemp = (incrementValue) => {
-  let tempInF = parseInt(elements.tempValue.textContent) || NaN;
-  if (isNaN(tempInF)) {
-    tempInF = 0;
-    logError('Invalid temperature value detected, defaulting to 0');
+const updateWeatherForCity = async (cityName = DEFAULTS.CITY) => {
+  if (!isValidCityName(cityName)) return;
+
+  try {
+    const location = await getCoordinates(cityName);
+    if (location) {
+      const weather = await getWeather(location);
+      if (weather) {
+        handleWeatherData(weather);
+      }
+    }
+  } catch (error) {
+    logError('Error during weather retrieval:', { message: error.message });
   }
-  const newTempInF = tempInF + incrementValue;
-  elements.tempValue.textContent = newTempInF;
-  updateUI(newTempInF);
 };
 
-const convertTemp = (tempInK) => {
-  const tempInF = (tempInK - 273.15) * (9 / 5) + 32;
-  return Math.round(tempInF);
-};
-
-const updateUI = (tempInF) => {
-  const category = getTemperatureCategory(tempInF);
-
-  const colorMap = {
-    cold: 'teal',
-    cool: 'green',
-    warm: 'yellow',
-    hot: 'orange',
-    veryHot: 'red',
-  };
-
-  const landscapeMap = {
-    cold: LANDSCAPES.cold,
-    cool: LANDSCAPES.cool,
-    warm: LANDSCAPES.warm,
-    hot: LANDSCAPES.hot,
-  };
-
-  elements.tempValue.style.color = colorMap[category];
-  elements.landscape.textContent = landscapeMap[category] || LANDSCAPES.hot;
-};
-
-const getTemperatureCategory = (tempInF) => {
-  const thresholds = [
-    { threshold: TEMPS_IN_F.cold, category: 'cold' },
-    { threshold: TEMPS_IN_F.cool, category: 'cool' },
-    { threshold: TEMPS_IN_F.warm, category: 'warm' },
-    { threshold: TEMPS_IN_F.hot, category: 'hot' },
-  ];
-  
-  const category = thresholds.find(t => tempInF < t.threshold);
-  return category ? category.category : 'veryHot';
+const isValidCityName = (cityName) => {
+  if (!cityName) {
+    displayErrorMessage('Please enter a city name.');
+    return false;
+  }
+  return true;
 };
 
 const getCoordinates = async (cityName) => {
@@ -120,30 +125,6 @@ const getWeather = async ({ lat, lon }) => {
   }
 };
 
-const updateWeatherForCity = async (cityName = DEFAULT_CITY) => {
-  if (!isValidCityName(cityName)) return;
-
-  try {
-    const location = await getCoordinates(cityName);
-    if (location) {
-      const weather = await getWeather(location);
-      if (weather) {
-        handleWeatherData(weather);
-      }
-    }
-  } catch (error) {
-    logError('Error during weather retrieval:', { message: error.message });
-  }
-};
-
-const isValidCityName = (cityName) => {
-  if (!cityName) {
-    displayErrorMessage('Please enter a city name.');
-    return false;
-  }
-  return true;
-};
-
 const handleWeatherData = (weather) => {
   if (weather.main && weather.main.temp) {
     const tempInF = convertTemp(weather.main.temp);
@@ -154,13 +135,30 @@ const handleWeatherData = (weather) => {
   }
 };
 
-// check on defining constants
-const resetUI = () => {
-  elements.cityNameInput.value = DEFAULT_CITY;
-  elements.headerCityName.textContent = DEFAULT_CITY;
-  elements.skySelect.value = DEFAULT_SKY;
-  updateSky();
-  updateWeatherForCity();
+const convertTemp = (tempInK) => {
+  const tempInF = (tempInK - 273.15) * (9 / 5) + 32;
+  return Math.round(tempInF);
+};
+
+const updateUI = (tempInF) => {
+  const tempScheme = WEATHER_CONFIG.TEMP_SCHEME.find(({ threshold }) => tempInF < threshold) || {};
+  const defaultLandscape = WEATHER_CONFIG.TEMP_SCHEME.find(
+    scheme => scheme.category === DEFAULTS.LANDSCAPE
+  )?.landscape;
+
+  elements.tempValue.style.color = tempScheme.color || '';
+  elements.landscape.textContent = tempScheme.landscape || defaultLandscape;
+};
+
+const updateTemp = (incrementValue) => {
+  let tempInF = parseInt(elements.tempValue.textContent) || NaN;
+  if (isNaN(tempInF)) {
+    tempInF = 0;
+    logError('Invalid temperature value detected, defaulting to 0');
+  }
+  const newTempInF = tempInF + incrementValue;
+  elements.tempValue.textContent = newTempInF;
+  updateUI(newTempInF);
 };
 
 const logError = (message, errorDetails) => {
@@ -212,6 +210,6 @@ const registerHandlers = () => {
 document.addEventListener('DOMContentLoaded', () => {
   registerHandlers();
   resetUI();
+  // updateSky();
   updateWeatherForCity();
-  updateSky();
 });
