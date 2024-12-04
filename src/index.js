@@ -123,12 +123,12 @@ const getWeather = async ({ lat, lon }) => {
 };
 
 const displayWeatherForCity = async (cityName = DEFAULT_CITY) => {
+  if (!isValidCityName(cityName)) return;
+
   try {
     const location = await getLocation(cityName);
-
     if (location) {
       const weather = await getWeather(location);
-
       if (weather) {
         handleWeatherData(weather);
       } else {
@@ -140,6 +140,14 @@ const displayWeatherForCity = async (cityName = DEFAULT_CITY) => {
   } catch (error) {
     logError('Error during weather retrieval:', { message: error.message });
   }
+};
+
+const isValidCityName = (cityName) => {
+  if (!cityName) {
+    displayErrorMessage('Please enter a city name.');
+    return false;
+  }
+  return true;
 };
 
 const handleWeatherData = (weather) => {
@@ -194,10 +202,6 @@ const registerHandlers = () => {
 
   currentTempButton.addEventListener('click', () => {
     const cityName = elements.headerCityName.textContent.trim();
-    if (!cityName) {
-      displayErrorMessage('Please enter a city name.');
-      return;
-    }
     displayWeatherForCity(cityName);
   });
   
