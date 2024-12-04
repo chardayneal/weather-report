@@ -187,7 +187,6 @@ const registerHandlers = () => {
     incrTempControl,
     decrTempControl,
     cityNameInput,
-    headerCityName,
     currentTempButton,
     skySelect,
     cityNameReset,
