@@ -7,6 +7,13 @@ const TEMPS_IN_F = {
   hot: 80,
 }
 
+const SKIES = {
+  sunny: "☁️ ☁️ ☁️ ☀️ ☁️ ☁️",
+  cloudy: "☁️☁️ ☁️ ☁️☁️ ☁️ 🌤 ☁️ ☁️☁️",
+  rainy: "🌧🌈⛈🌧🌧💧⛈🌧🌦🌧💧🌧🌧",
+  snowy: "🌨❄️🌨🌨❄️❄️🌨❄️🌨❄️❄️🌨🌨"
+};
+
 const LANDSCAPES = {
   hot: "🌵__🐍_🦂_🌵🌵__🐍_🏜_🦂",
   warm: "🌸🌿🌼__🌷🌻🌿_☘️🌱_🌻🌷",
@@ -14,21 +21,29 @@ const LANDSCAPES = {
   cold: "🌲🌲⛄️🌲⛄️🍂🌲🍁🌲🌲⛄️🍂🌲"
 };
 
+const getElement = (id) => document.getElementById(id);
 const elements = {
-  tempValue: document.getElementById('tempValue'),
-  incrTempControl: document.getElementById('increaseTempControl'),
-  decrTempControl: document.getElementById('decreaseTempControl'),
-  landscape: document.getElementById('landscape'),
-  cityNameInput: document.getElementById('cityNameInput'),
-  headerCityName: document.getElementById('headerCityName'),
-  currentTempButton: document.getElementById('currentTempButton')
+  tempValue: getElement('tempValue'),
+  incrTempControl: getElement('increaseTempControl'),
+  decrTempControl: getElement('decreaseTempControl'),
+  landscape: getElement('landscape'),
+  cityNameInput: getElement('cityNameInput'),
+  headerCityName: getElement('headerCityName'),
+  currentTempButton: getElement('currentTempButton'),
+  skySelect: getElement('skySelect'),
+  sky: getElement('sky'),
+};
+
+const updateSky = (selectedSky) => {
+  const skyText = SKIES[selectedSky] || SKIES.sunny;
+  elements.sky.textContent = skyText;
 };
 
 const updateTemp = (incrementValue) => {
   let tempInF = parseInt(elements.tempValue.textContent) || NaN;
   if (isNaN(tempInF)) {
     tempInF = 0;
-    console.error('Invalid temperature value detected, defaulting to 0');
+    logError('Invalid temperature value detected, defaulting to 0');
   }
   const newTempInF = tempInF + incrementValue;
   elements.tempValue.textContent = newTempInF;
@@ -42,21 +57,40 @@ const convertTemp = (tempInK) => {
 };
 
 const updateTempColor = (tempInF) => {  
-  const color = tempInF < TEMPS_IN_F.cold ? 'teal'
-                : tempInF < TEMPS_IN_F.cool ? 'green'
-                : tempInF < TEMPS_IN_F.warm ? 'yellow'
-                : tempInF < TEMPS_IN_F.hot ? 'orange'
-                : 'red';
-  elements.tempValue.style.color = color;
+  const category = getTemperatureCategory(tempInF);
+  const colorMap = {
+    cold: 'teal',
+    cool: 'green',
+    warm: 'yellow',
+    hot: 'orange',
+    veryHot: 'red',
+  };
+  elements.tempValue.style.color = colorMap[category];
 };
 
 const updateLandscape = (tempInF) => {
-  const landscape = tempInF < TEMPS_IN_F.cool ? LANDSCAPES.cold
-                  : tempInF < TEMPS_IN_F.warm ? LANDSCAPES.cool
-                  : tempInF < TEMPS_IN_F.hot ? LANDSCAPES.warm
-                  : LANDSCAPES.hot;
-  elements.landscape.textContent = landscape;
+  const category = getTemperatureCategory(tempInF);
+  const landscapeMap = {
+    cold: LANDSCAPES.cold,
+    cool: LANDSCAPES.cool,
+    warm: LANDSCAPES.warm,
+    hot: LANDSCAPES.hot,
+  };
+  elements.landscape.textContent = landscapeMap[category] || LANDSCAPES.hot;
 };
+
+const getTemperatureCategory = (tempInF) => {
+  const thresholds = [
+    { threshold: TEMPS_IN_F.cold, category: 'cold' },
+    { threshold: TEMPS_IN_F.cool, category: 'cool' },
+    { threshold: TEMPS_IN_F.warm, category: 'warm' },
+    { threshold: TEMPS_IN_F.hot, category: 'hot' },
+  ];
+  
+  const category = thresholds.find(t => tempInF < t.threshold);
+  return category ? category.category : 'veryHot';
+};
+
 
 const getLocation = async (cityName) => {
   try {
@@ -86,7 +120,7 @@ const getWeather = async ({ lat, lon }) => {
   }
 };
 
-const displayWeatherForCity = async (cityName) => {
+const displayWeatherForCity = async (cityName = DEFAULT_CITY) => {
   try {
     const location = await getLocation(cityName);
 
@@ -96,28 +130,42 @@ const displayWeatherForCity = async (cityName) => {
       if (weather) {
         handleWeatherData(weather);
       } else {
-        console.log('Could not fetch weather for', cityName);
+        logError('Could not fetch weather for', { cityName });
       }
     } else {
-      console.log('Could not fetch location for', cityName);
+      logError('Could not fetch location for', { cityName });
     } 
   } catch (error) {
-    console.log('Error during weather retrieval:', error.message);
-    alert('An unexpected error occurred. Please try again.');
+    logError('Error during weather retrieval:', { message: error.message });
   }
 };
 
 const handleWeatherData = (weather) => {
-  const tempInK = weather.main.temp;
-  const tempInF = convertTemp(tempInK);
-  elements.tempValue.textContent = tempInF;
-  updateTempColor(tempInF);
-  updateLandscape(tempInF);
+  if (weather.main && weather.main.temp) {
+    const tempInK = weather.main.temp;
+    const tempInF = convertTemp(tempInK);
+    elements.tempValue.textContent = tempInF;
+    updateTempColor(tempInF);
+    updateLandscape(tempInF);
+  } else {
+    logError('Invalid weather data received', weather);
+  }
 };
 
 const logError = (message, errorDetails) => {
   console.error(message, errorDetails);
+  displayErrorMessage(message);
 };
+
+const displayErrorMessage = (message) => {
+  const errorMessageElement = getElement('errorMessage');
+  errorMessageElement.textContent = message;
+  errorMessageElement.style.display = 'block';
+  setTimeout(() => {
+    errorMessageElement.style.display = 'none';
+  }, 5000);
+};
+
 
 const registerHandlers = () => {
   const {
@@ -126,11 +174,8 @@ const registerHandlers = () => {
     cityNameInput,
     headerCityName,
     currentTempButton,
+    skySelect,
   } = elements;
-
-  cityNameInput.value = DEFAULT_CITY;
-  headerCityName.textContent = DEFAULT_CITY;
-  displayWeatherForCity(DEFAULT_CITY);
 
   incrTempControl.addEventListener('click', () => updateTemp(1));
   decrTempControl.addEventListener('click', () => updateTemp(-1));
@@ -141,13 +186,24 @@ const registerHandlers = () => {
 
   currentTempButton.addEventListener('click', () => {
     const cityName = headerCityName.textContent.trim();
-
     if (!cityName) {
-      alert('Please enter a city name.');
+      displayErrorMessage('Please enter a city name.');
+      // alert('Please enter a city name.');
       return;
     }
     displayWeatherForCity(cityName);
   });
+  
+  skySelect.addEventListener('change', (event) => {
+    const selectedSky = event.target.value;
+    updateSky(selectedSky);
+    });
 };
 
-document.addEventListener('DOMContentLoaded', registerHandlers);
+document.addEventListener('DOMContentLoaded', () => {
+  registerHandlers();
+  displayWeatherForCity();
+  cityNameInput.value = DEFAULT_CITY;
+  headerCityName.textContent = DEFAULT_CITY;
+  updateSky();
+});
