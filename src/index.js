@@ -1,4 +1,5 @@
 const DEFAULT_CITY = 'Seattle';
+const DEFAULT_SKY = 'sunny';
 
 const TEMPS_IN_F = {
   cold: 50,
@@ -36,8 +37,8 @@ const elements = {
   cityNameReset: getElement('cityNameReset'),
 };
 
-const updateSky = (selectedSky) => {
-  const skyText = SKIES[selectedSky] || SKIES.sunny;
+const updateSky = (selectedSky = 'sunny') => {
+  const skyText = SKIES[selectedSky];
   elements.sky.textContent = skyText;
 };
 
@@ -49,8 +50,7 @@ const updateTemp = (incrementValue) => {
   }
   const newTempInF = tempInF + incrementValue;
   elements.tempValue.textContent = newTempInF;
-  updateTempColor(newTempInF);
-  updateLandscape(newTempInF);
+  updateUI(newTempInF);
 };
 
 const convertTemp = (tempInK) => {
@@ -58,8 +58,9 @@ const convertTemp = (tempInK) => {
   return Math.round(tempInF);
 };
 
-const updateTempColor = (tempInF) => {  
+const updateUI = (tempInF) => {
   const category = getTemperatureCategory(tempInF);
+
   const colorMap = {
     cold: 'teal',
     cool: 'green',
@@ -67,17 +68,15 @@ const updateTempColor = (tempInF) => {
     hot: 'orange',
     veryHot: 'red',
   };
-  elements.tempValue.style.color = colorMap[category];
-};
 
-const updateLandscape = (tempInF) => {
-  const category = getTemperatureCategory(tempInF);
   const landscapeMap = {
     cold: LANDSCAPES.cold,
     cool: LANDSCAPES.cool,
     warm: LANDSCAPES.warm,
     hot: LANDSCAPES.hot,
   };
+
+  elements.tempValue.style.color = colorMap[category];
   elements.landscape.textContent = landscapeMap[category] || LANDSCAPES.hot;
 };
 
@@ -93,8 +92,7 @@ const getTemperatureCategory = (tempInF) => {
   return category ? category.category : 'veryHot';
 };
 
-
-const getLocation = async (cityName) => {
+const getCoordinates = async (cityName) => {
   try {
     const response = await axios.get(`http://127.0.0.1:5000/location?q=${cityName}`);
     const firstMatch = response.data.length > 0 ? response.data[0] : null;
@@ -122,21 +120,17 @@ const getWeather = async ({ lat, lon }) => {
   }
 };
 
-const displayWeatherForCity = async (cityName = DEFAULT_CITY) => {
+const updateWeatherForCity = async (cityName = DEFAULT_CITY) => {
   if (!isValidCityName(cityName)) return;
 
   try {
-    const location = await getLocation(cityName);
+    const location = await getCoordinates(cityName);
     if (location) {
       const weather = await getWeather(location);
       if (weather) {
         handleWeatherData(weather);
-      } else {
-        logError('Could not fetch weather for', { cityName });
       }
-    } else {
-      logError('Could not fetch location for', { cityName });
-    } 
+    }
   } catch (error) {
     logError('Error during weather retrieval:', { message: error.message });
   }
@@ -152,19 +146,21 @@ const isValidCityName = (cityName) => {
 
 const handleWeatherData = (weather) => {
   if (weather.main && weather.main.temp) {
-    const tempInK = weather.main.temp;
-    const tempInF = convertTemp(tempInK);
+    const tempInF = convertTemp(weather.main.temp);
     elements.tempValue.textContent = tempInF;
-    updateTempColor(tempInF);
-    updateLandscape(tempInF);
+    updateUI(tempInF);
   } else {
     logError('Invalid weather data received', weather);
   }
 };
 
-const resetCityName = () => {
+// check on defining constants
+const resetUI = () => {
   elements.cityNameInput.value = DEFAULT_CITY;
   elements.headerCityName.textContent = DEFAULT_CITY;
+  elements.skySelect.value = DEFAULT_SKY;
+  updateSky();
+  updateWeatherForCity();
 };
 
 const logError = (message, errorDetails) => {
@@ -180,7 +176,6 @@ const displayErrorMessage = (message) => {
     errorMessageElement.style.display = 'none';
   }, 5000);
 };
-
 
 const registerHandlers = () => {
   const {
@@ -201,7 +196,7 @@ const registerHandlers = () => {
 
   currentTempButton.addEventListener('click', () => {
     const cityName = elements.headerCityName.textContent.trim();
-    displayWeatherForCity(cityName);
+    updateWeatherForCity(cityName);
   });
   
   skySelect.addEventListener('change', (event) => {
@@ -209,14 +204,14 @@ const registerHandlers = () => {
     updateSky(selectedSky);
     });
 
-    cityNameReset.addEventListener('click', () => {
-      resetCityName();
-    });
+  cityNameReset.addEventListener('click', () => {
+    resetUI();
+  });
 };
 
 document.addEventListener('DOMContentLoaded', () => {
   registerHandlers();
-  resetCityName();
-  displayWeatherForCity();
+  resetUI();
+  updateWeatherForCity();
   updateSky();
 });
