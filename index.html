@@ -22,17 +22,22 @@
         <div class="temperature__content">
             <div class="temperature__controls">
                 <span id="increaseTempControl">⬆️</span>
-                <span id="tempValue">65</span>
-                <!-- remove placeholder number, add actual temp here -->
+                <span id="tempValue"></span>
                 <span id="decreaseTempControl">⬇️</span>
             </div>
-            <button id="currentTempButton">Get Realtime Temperature</button>
+            <div class="button-and-error">
+                <button id="currentTempButton">Get Realtime Temperature</button>
+                <div id="errorMessage"></div>
+            </div>
         </div>
     </section>
     <section class="sky__section">
         <h2>Sky</h2>
         <select id="skySelect">
-            <!-- sky options here -->
+            <option value="sunny">Sunny</option>
+            <option value="cloudy">Cloudy</option>
+            <option value="rainy">Rainy</option>
+            <option value="snowy">Snowy</option>
         </select>
     </section>
 
@@ -49,7 +54,7 @@
             <div id="landscape"></div>
         </div>
     </section>
-    <script src="./node_modules/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="./src/index.js"></script>
 </body>
 </html>

@@ -83,6 +83,26 @@ justify-content: space-around;
 /* justify-content: center; */
 }
 
+.button-and-error {
+  display: flex;
+  flex-direction: column; /* Makes the button and error message stack vertically */
+  align-items: center; /* Centers the button and error message */
+}
+
+#currentTempButton {
+  margin-top: 32px;
+}
+
+#errorMessage {
+    display: none;
+    color: red;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 14px;
+    width: 100%;
+    max-width: 300px;
+}
+
 #tempValue {
 font-size: 3rem;
 margin-left: 1.5rem;
