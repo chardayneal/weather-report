@@ -152,6 +152,11 @@ const handleWeatherData = (weather) => {
   }
 };
 
+const resetCityName = () => {
+  cityNameInput.value = DEFAULT_CITY;
+  headerCityName.textContent = DEFAULT_CITY;
+};
+
 const logError = (message, errorDetails) => {
   console.error(message, errorDetails);
   displayErrorMessage(message);
@@ -198,12 +203,15 @@ const registerHandlers = () => {
     const selectedSky = event.target.value;
     updateSky(selectedSky);
     });
+
+    cityNameReset.addEventListener('click', () => {
+      resetCityName();
+    });
 };
 
 document.addEventListener('DOMContentLoaded', () => {
   registerHandlers();
+  resetCityName();
   displayWeatherForCity();
-  cityNameInput.value = DEFAULT_CITY;
-  headerCityName.textContent = DEFAULT_CITY;
   updateSky();
 });
