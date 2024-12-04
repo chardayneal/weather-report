@@ -32,6 +32,8 @@ const elements = {
   currentTempButton: getElement('currentTempButton'),
   skySelect: getElement('skySelect'),
   sky: getElement('sky'),
+  errorMessage: getElement('errorMessage'),
+  cityNameReset: getElement('cityNameReset'),
 };
 
 const updateSky = (selectedSky) => {
@@ -153,8 +155,8 @@ const handleWeatherData = (weather) => {
 };
 
 const resetCityName = () => {
-  cityNameInput.value = DEFAULT_CITY;
-  headerCityName.textContent = DEFAULT_CITY;
+  elements.cityNameInput.value = DEFAULT_CITY;
+  elements.headerCityName.textContent = DEFAULT_CITY;
 };
 
 const logError = (message, errorDetails) => {
@@ -163,7 +165,7 @@ const logError = (message, errorDetails) => {
 };
 
 const displayErrorMessage = (message) => {
-  const errorMessageElement = getElement('errorMessage');
+  const errorMessageElement = elements.errorMessage;
   errorMessageElement.textContent = message;
   errorMessageElement.style.display = 'block';
   setTimeout(() => {
@@ -180,20 +182,20 @@ const registerHandlers = () => {
     headerCityName,
     currentTempButton,
     skySelect,
+    cityNameReset,
   } = elements;
 
   incrTempControl.addEventListener('click', () => updateTemp(1));
   decrTempControl.addEventListener('click', () => updateTemp(-1));
   
   cityNameInput.addEventListener('input', () => {
-    headerCityName.textContent = cityNameInput.value
+    elements.headerCityName.textContent = elements.cityNameInput.value
   });
 
   currentTempButton.addEventListener('click', () => {
-    const cityName = headerCityName.textContent.trim();
+    const cityName = elements.headerCityName.textContent.trim();
     if (!cityName) {
       displayErrorMessage('Please enter a city name.');
-      // alert('Please enter a city name.');
       return;
     }
     displayWeatherForCity(cityName);
