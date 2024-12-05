@@ -60,15 +60,33 @@ const elements = {
   cityNameReset: getElement('cityNameReset'),
 };
 
+const state = {
+  city: DEFAULTS.CITY,
+  sky: DEFAULTS.SKY,
+  temperature: 0,
+  landscape: DEFAULTS.LANDSCAPE,
+};
+
+const updateState = (newState) => {
+  const { sky, temperature, city, landscape } = newState;
+
+  if (sky) updateSky(sky);
+  if (temperature !== undefined) updateUI(temperature, landscape, city);
+  if (city) state.city = city;
+  if (landscape) state.landscape = landscape;
+
+  Object.assign(state, newState);
+};
+
 const resetUI = () => {
   elements.cityNameInput.value = DEFAULTS.CITY;
   elements.headerCityName.textContent = DEFAULTS.CITY;
   elements.skySelect.value = DEFAULTS.SKY;
-  updateSky();
-  updateWeatherForCity();
+  updateSky(DEFAULTS.SKY);
+  updateWeatherForCity(DEFAULTS.CITY);
 };
 
-const updateSky = (selectedSky = DEFAULTS.SKY) => {
+const updateSky = (selectedSky) => {
   const skyText = WEATHER_CONFIG.SKY_VIEWS[selectedSky];
   elements.sky.textContent = skyText;
 };
@@ -81,7 +99,7 @@ const updateWeatherForCity = async (cityName = DEFAULTS.CITY) => {
     if (location) {
       const weather = await getWeather(location);
       if (weather) {
-        handleWeatherData(weather);
+        applyWeatherData(weather, cityName);
       }
     }
   } catch (error) {
@@ -125,14 +143,33 @@ const getWeather = async ({ lat, lon }) => {
   }
 };
 
-const handleWeatherData = (weather) => {
-  if (weather.main && weather.main.temp) {
-    const tempInF = convertTemp(weather.main.temp);
-    elements.tempValue.textContent = tempInF;
-    updateUI(tempInF);
+const applyWeatherData = (weather, city) => {
+  if (weather.main?.temp) {
+    const temperature = convertTemp(weather.main.temp);
+    const landscape = getLandscapeForTemperature(temperature);
+    updateState({
+      city,
+      temperature,
+      landscape,
+    });
   } else {
     logError('Invalid weather data received', weather);
   }
+};
+
+const getLandscapeForTemperature = (tempInF) => {
+  const tempScheme = findTempScheme(tempInF);
+  const defaultScheme = findDefaultScheme();
+
+  return tempScheme?.landscape || defaultScheme?.landscape;
+};
+
+const findTempScheme = (tempInF) => {
+  return WEATHER_CONFIG.TEMP_SCHEME.find(({ threshold }) => tempInF < threshold);
+};
+
+const findDefaultScheme = () => {
+  return WEATHER_CONFIG.TEMP_SCHEME.find(scheme => scheme.category === DEFAULTS.LANDSCAPE);
 };
 
 const convertTemp = (tempInK) => {
@@ -140,25 +177,20 @@ const convertTemp = (tempInK) => {
   return Math.round(tempInF);
 };
 
-const updateUI = (tempInF) => {
-  const tempScheme = WEATHER_CONFIG.TEMP_SCHEME.find(({ threshold }) => tempInF < threshold) || {};
-  const defaultLandscape = WEATHER_CONFIG.TEMP_SCHEME.find(
-    scheme => scheme.category === DEFAULTS.LANDSCAPE
-  )?.landscape;
+const updateUI = (tempInF, landscape, city) => {
+  const tempScheme = findTempScheme(tempInF);
 
   elements.tempValue.style.color = tempScheme.color || '';
-  elements.landscape.textContent = tempScheme.landscape || defaultLandscape;
+  elements.tempValue.textContent = tempInF;
+  elements.landscape.textContent = landscape || getLandscapeForTemperature(tempInF);
+
+  elements.headerCityName.textContent = city || state.city;
 };
 
 const updateTemp = (incrementValue) => {
-  let tempInF = parseInt(elements.tempValue.textContent) || NaN;
-  if (isNaN(tempInF)) {
-    tempInF = 0;
-    logError('Invalid temperature value detected, defaulting to 0');
-  }
-  const newTempInF = tempInF + incrementValue;
-  elements.tempValue.textContent = newTempInF;
-  updateUI(newTempInF);
+  const tempInF = state.temperature;
+  const temperature = tempInF + incrementValue;
+  updateState({ temperature });
 };
 
 const logError = (message, errorDetails) => {
@@ -189,11 +221,11 @@ const registerHandlers = () => {
   decrTempControl.addEventListener('click', () => updateTemp(-1));
   
   cityNameInput.addEventListener('input', () => {
-    elements.headerCityName.textContent = elements.cityNameInput.value
+    elements.headerCityName.textContent = elements.cityNameInput.value.trim()
   });
 
   currentTempButton.addEventListener('click', () => {
-    const cityName = elements.headerCityName.textContent.trim();
+    const cityName = elements.cityNameInput.value.trim();
     updateWeatherForCity(cityName);
   });
   
@@ -210,6 +242,5 @@ const registerHandlers = () => {
 document.addEventListener('DOMContentLoaded', () => {
   registerHandlers();
   resetUI();
-  // updateSky();
   updateWeatherForCity();
 });
