@@ -1,3 +1,8 @@
+const API_URLS = {
+  COORDINATES: 'https://ada-weather-report-proxy-server.onrender.com/location',
+  WEATHER: 'https://ada-weather-report-proxy-server.onrender.com/weather',
+};
+
 const DEFAULTS = {
   CITY: 'Seattle',
   SKY: 'sunny',
@@ -99,7 +104,8 @@ const isValidCityName = (cityName) => {
 
 const getCoordinates = async (cityName) => {
   try {
-    const response = await axios.get(`http://127.0.0.1:5000/location?q=${cityName}`);
+    const params = new URLSearchParams({ q: cityName }).toString();
+    const response = await axios.get(`${API_URLS.COORDINATES}?${params}`);
     const firstMatch = response.data.length > 0 ? response.data[0] : null;
 
     if (firstMatch) {
@@ -117,7 +123,8 @@ const getCoordinates = async (cityName) => {
 
 const getWeather = async ({ lat, lon }) => {
   try {
-    const response = await axios.get(`http://127.0.0.1:5000/weather?lat=${lat}&lon=${lon}`);
+    const params = new URLSearchParams({ lat, lon }).toString();
+    const response = await axios.get(`${API_URLS.WEATHER}?${params}`);
     return response.data;
   } catch (error) {
     logError('Error fetching weather for coordinates:', { coordinates: { lat, lon }, message: error.message, });
@@ -187,7 +194,7 @@ const registerHandlers = () => {
 
   incrTempControl.addEventListener('click', () => updateTemp(1));
   decrTempControl.addEventListener('click', () => updateTemp(-1));
-  
+
   cityNameInput.addEventListener('input', () => {
     elements.headerCityName.textContent = elements.cityNameInput.value
   });
@@ -196,11 +203,11 @@ const registerHandlers = () => {
     const cityName = elements.headerCityName.textContent.trim();
     updateWeatherForCity(cityName);
   });
-  
+
   skySelect.addEventListener('change', (event) => {
     const selectedSky = event.target.value;
     updateSky(selectedSky);
-    });
+  });
 
   cityNameReset.addEventListener('click', () => {
     resetUI();
