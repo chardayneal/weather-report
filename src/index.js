@@ -117,7 +117,7 @@ const isValidCityName = (cityName) => {
 
 const getCoordinates = async (cityName) => {
   try {
-    const response = await axios.get(`http://127.0.0.1:5000/location?q=${cityName}`);
+    const response = await axios.get(`https://ada-weather-report-proxy-server.onrender.com//location?q=${cityName}`);
     const firstMatch = response.data.length > 0 ? response.data[0] : null;
 
     if (firstMatch) {
@@ -135,7 +135,7 @@ const getCoordinates = async (cityName) => {
 
 const getWeather = async ({ lat, lon }) => {
   try {
-    const response = await axios.get(`http://127.0.0.1:5000/weather?lat=${lat}&lon=${lon}`);
+    const response = await axios.get(`https://ada-weather-report-proxy-server.onrender.com/weather?lat=${lat}&lon=${lon}`);
     return response.data;
   } catch (error) {
     logError('Error fetching weather for coordinates:', { coordinates: { lat, lon }, message: error.message, });
